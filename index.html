@@ -63,11 +63,28 @@ button:hover{filter:brightness(.98);transform:translateY(-1px)}
     <input id="apiKey" type="password" placeholder="Cole aqui sua chave do Groq (começa com gsk_)">
     <p class="small">A chave permanece preenchida ao criar um novo objetivo, mas não fica salva após fechar ou atualizar a página.</p>
 
+    <div class="grid">
+      <div>
+        <label for="instrumento">Instrumento de referência</label>
+        <select id="instrumento" onchange="trocarInstrumento()">
+          <option value="Portage" selected>Portage</option>
+          <option value="IDADI">IDADI</option>
+          <option value="Vineland">Vineland</option>
+          <option value="PEI">PEI</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
+      <div>
+        <label for="idade">Faixa etária do educando</label>
+        <input id="idade" type="number" min="0" max="60" placeholder="Ex.: 4">
+      </div>
+    </div>
+
     <label for="objetivo">Objetivo</label>
     <textarea id="objetivo" placeholder="Ex.: Obedecer a 3 ordens diferentes que não são acompanhadas de gestos indicativos."></textarea>
 
     <div class="grid">
-      <div>
+      <div id="areaPortageBox">
         <label for="area">Área do Portage</label>
         <select id="area">
           <option value="automatica">Detectar automaticamente</option>
@@ -92,17 +109,13 @@ button:hover{filter:brightness(.98);transform:translateY(-1px)}
       <div>
         <label for="referencia">Como escrever</label>
         <select id="referencia">
-  <option value="nao_mencionar">Não mencionar</option>
-  <option value="a educanda">a educanda</option>
-  <option value="o educando">o educando</option>
-  <option value="a criança">a criança</option>
-  <option value="o aluno">o aluno</option>
-  <option value="a aluna">a aluna</option>
-</select>
-      </div>
-      <div>
-        <label for="idade">Idade (opcional)</label>
-        <input id="idade" type="text" placeholder="Ex.: 4 anos">
+          <option value="nao_mencionar">Não mencionar</option>
+          <option value="a educanda">a educanda</option>
+          <option value="o educando">o educando</option>
+          <option value="a criança">a criança</option>
+          <option value="o aluno">o aluno</option>
+          <option value="a aluna">a aluna</option>
+        </select>
       </div>
     </div>
 
@@ -133,9 +146,16 @@ function limparTexto(txt){
   return (txt || '').trim().replace(/\s+/g,' ');
 }
 
+function trocarInstrumento(){
+  const instrumento = document.getElementById('instrumento').value;
+  document.getElementById('areaPortageBox').style.display =
+    instrumento === 'Portage' ? 'block' : 'none';
+}
+
 async function gerarEstrategias(){
   const chave = limparTexto(document.getElementById('apiKey').value);
   const objetivo = limparTexto(document.getElementById('objetivo').value);
+  const instrumento = document.getElementById('instrumento').value;
   const area = document.getElementById('area').value;
   const quantidade = document.getElementById('quantidade').value;
   const referencia = document.getElementById('referencia').value;
@@ -158,14 +178,21 @@ async function gerarEstrategias(){
   botao.disabled = true;
   el.innerHTML = '<span class="gerando">Gerando estratégias, aguarde...</span>';
 
+  const textoReferencia = referencia === 'nao_mencionar'
+    ? 'Não mencionar educando, educanda, aluno, aluna ou criança nas estratégias.'
+    : `Utilizar "${referencia}" quando for necessário mencionar o estudante.`;
+
   const dadosOpcionais = [
-    area !== 'automatica' ? `Área do Portage: ${area}.` : 'Identifique automaticamente a área do Portage.',
-    idade ? `Idade: ${idade}.` : '',
+    `Instrumento de referência: ${instrumento}.`,
+    instrumento === 'Portage'
+      ? (area !== 'automatica' ? `Área do Portage: ${area}.` : 'Identifique automaticamente a área do Portage.')
+      : '',
+    idade ? `Faixa etária: ${idade} anos.` : '',
     perfil ? `Perfil: ${perfil}.` : '',
     materiais ? `Materiais disponíveis: ${materiais}.` : ''
   ].filter(Boolean).join('\n');
 
-  const prompt = `Você é uma pedagoga especialista em educação especial, estimulação precoce e Currículo Portage.
+  const prompt = `Você é uma pedagoga especialista em educação especial, estimulação precoce e elaboração de estratégias pedagógicas.
 
 Crie exatamente ${quantidade} estratégias pedagógicas para o objetivo informado.
 
@@ -175,11 +202,11 @@ PADRÃO OBRIGATÓRIO:
 - Escrever de forma curta, objetiva, prática e pedagógica.
 - Manter o estilo de frases como: "Jogos lúdicos com instruções orais, favorecendo a compreensão de comandos variados."
 - Cada estratégia deve apresentar uma proposta diferente.
-- Utilizar "${referencia}" quando for necessário mencionar o estudante.
+${textoReferencia}
 - Não numerar, não usar títulos e não explicar o objetivo.
 - Não repetir o objetivo como estratégia.
 - Não criar habilidades diferentes da solicitada.
-- Considerar o perfil, a idade e os materiais apenas quando forem informados.
+- Considerar o instrumento de referência, a faixa etária, o perfil e os materiais apenas quando forem informados.\n- Adaptar as propostas à faixa etária, evitando atividades infantis para adolescentes ou adultos.
 - Usar linguagem adequada ao trabalho pedagógico e à educação especial.
 - Entregar somente as estratégias, uma por linha, sem comentários antes ou depois.
 
@@ -262,11 +289,14 @@ function baixarArquivo(blob,nome){
 function limparTudo(){
   if(!confirm('Deseja limpar o objetivo atual?')) return;
   document.querySelectorAll('input[type="text"],textarea').forEach(el => el.value='');
+  document.getElementById('instrumento').value='Portage';
   document.getElementById('area').value='automatica';
   document.getElementById('quantidade').value='4';
-  document.getElementById('referencia').value='a educanda';
+  document.getElementById('referencia').value='nao_mencionar';
+  trocarInstrumento();
   document.getElementById('resultado').innerText='As estratégias aparecerão aqui.';
 }
+window.addEventListener('DOMContentLoaded', trocarInstrumento);
 </script>
 </body>
 </html>
