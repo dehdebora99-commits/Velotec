@@ -293,7 +293,7 @@ async function chamarGroq(chave, prompt, maxTokens){
       'Authorization':`Bearer ${chave}`
     },
     body:JSON.stringify({
-      model:'llama-3.3-70b-versatile',
+      model:'openai/gpt-oss-120b',
       messages:[{role:'user',content:prompt}],
       temperature:0.45,
       max_tokens:maxTokens
